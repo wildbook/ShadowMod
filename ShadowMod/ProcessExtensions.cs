@@ -48,13 +48,13 @@ namespace Thunderbolt.Core
             var size = Is64BitProcess(handle) ? 8 : 4;
             var pointers = new IntPtr[0];
 
-            if (!Native.EnumProcessModulesEx(handle, pointers, 0, out var bytesNeeded, ModuleFilter.LIST_MODULES_ALL))
+            if (!NativeMethods.EnumProcessModulesEx(handle, pointers, 0, out var bytesNeeded, ModuleFilter.LIST_MODULES_ALL))
                 throw new Exception("Failed to enumerate process modules", new Win32Exception());
 
             var count = bytesNeeded / size;
             pointers = new IntPtr[count];
 
-            if (!Native.EnumProcessModulesEx(handle, pointers, bytesNeeded, out bytesNeeded, ModuleFilter.LIST_MODULES_ALL))
+            if (!NativeMethods.EnumProcessModulesEx(handle, pointers, bytesNeeded, out bytesNeeded, ModuleFilter.LIST_MODULES_ALL))
                 throw new Exception("Failed to enumerate process modules", new Win32Exception());
 
             for (var i = 0; i < count; i++)
@@ -63,11 +63,11 @@ namespace Thunderbolt.Core
                 const int MAX_PATH = 260;
 
                 var path = new StringBuilder(MAX_PATH);
-                Native.GetModuleFileNameEx(handle, pointers[i], path, MAX_PATH);
+                NativeMethods.GetModuleFileNameEx(handle, pointers[i], path, MAX_PATH);
 
                 if (path.ToString().IndexOf(name, StringComparison.InvariantCultureIgnoreCase) > -1)
                 {
-                    if (!Native.GetModuleInformation(handle, pointers[i], out var info, (uint)(size * pointers.Length)))
+                    if (!NativeMethods.GetModuleInformation(handle, pointers[i], out var info, (uint)(size * pointers.Length)))
                         throw new Exception("Failed to get module information", new Win32Exception());
 
                     module = info.lpBaseOfDll;
@@ -85,7 +85,7 @@ namespace Thunderbolt.Core
             if (!Environment.Is64BitOperatingSystem)
                 return false;
 
-            if (!Native.IsWow64Process(handle, out var isWow64))
+            if (!NativeMethods.IsWow64Process(handle, out var isWow64))
                 throw new Win32Exception(Marshal.GetLastWin32Error());
 
             return !isWow64;

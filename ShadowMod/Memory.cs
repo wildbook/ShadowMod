@@ -36,7 +36,7 @@ namespace Thunderbolt.Core
         public byte[] ReadBytes(IntPtr address, int size)
         {
             var bytes = new byte[size];
-            if (!Native.ReadProcessMemory(_processHandle, address, bytes, size))
+            if (!NativeMethods.ReadProcessMemory(_processHandle, address, bytes, size))
                 throw new FailedToReadMemoryException(new Win32Exception(Marshal.GetLastWin32Error()));
             return bytes;
         }
@@ -54,7 +54,7 @@ namespace Thunderbolt.Core
 
         public IntPtr Allocate(int size)
         {
-            var addr = Native.VirtualAllocEx(_processHandle, IntPtr.Zero, size, AllocationType.MEM_COMMIT, MemoryProtection.PAGE_EXECUTE_READWRITE);
+            var addr = NativeMethods.VirtualAllocEx(_processHandle, IntPtr.Zero, size, AllocationType.MEM_COMMIT, MemoryProtection.PAGE_EXECUTE_READWRITE);
             if (addr == IntPtr.Zero)
                 throw new MemoryException("Failed to allocate process memory", new Win32Exception(Marshal.GetLastWin32Error()));
             _allocations.Add((addr, size));
@@ -63,14 +63,14 @@ namespace Thunderbolt.Core
 
         public void Write(IntPtr addr, byte[] data)
         {
-            if (!Native.WriteProcessMemory(_processHandle, addr, data, data.Length))
+            if (!NativeMethods.WriteProcessMemory(_processHandle, addr, data, data.Length))
                 throw new FailedToWriteMemoryException(new Win32Exception(Marshal.GetLastWin32Error()));
         }
 
         public void Dispose()
         {
             foreach (var (pointer, size) in _allocations)
-                Native.VirtualFreeEx(_processHandle, pointer, size, MemoryFreeType.MEM_DECOMMIT);
+                NativeMethods.VirtualFreeEx(_processHandle, pointer, size, MemoryFreeType.MEM_DECOMMIT);
         }
     }
 }
