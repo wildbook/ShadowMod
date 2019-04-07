@@ -1,33 +1,55 @@
-// dllmain.cpp : Defines the entry point for the DLL application.
-
-// Exclude rarely-used stuff from Windows headers
 #define WIN32_LEAN_AND_MEAN
-// Windows Header Files
 #include <windows.h>
-
 #include <cstdio>
-#include <iostream>
+#include "IAT.h"
 
-BOOL APIENTRY DllMain( HMODULE hModule,
-                       DWORD  ul_reason_for_call,
-                       LPVOID lpReserved
-                     )
+typedef HANDLE(__stdcall* fn_CreateFileW) (
+    _In_     LPCWSTR               lpFileName,
+    _In_     DWORD                 dwDesiredAccess,
+    _In_     DWORD                 dwShareMode,
+    _In_opt_ LPSECURITY_ATTRIBUTES lpSecurityAttributes,
+    _In_     DWORD                 dwCreationDisposition,
+    _In_     DWORD                 dwFlagsAndAttributes,
+    _In_opt_ HANDLE                hTemplateFile
+);
+
+fn_CreateFileW oCreateFileW;
+
+HANDLE __stdcall hCreateFileW(
+    _In_     LPCWSTR               lpFileName,
+    _In_     DWORD                 dwDesiredAccess,
+    _In_     DWORD                 dwShareMode,
+    _In_opt_ LPSECURITY_ATTRIBUTES lpSecurityAttributes,
+    _In_     DWORD                 dwCreationDisposition,
+    _In_     DWORD                 dwFlagsAndAttributes,
+    _In_opt_ HANDLE                hTemplateFile
+)
+{
+    std::wcout << "Loaded file: " << lpFileName << "\n";
+    return oCreateFileW(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
+}
+
+BOOL APIENTRY DllMain(HMODULE hModule,
+    DWORD  ul_reason_for_call,
+    LPVOID lpReserved
+)
 {
     switch (ul_reason_for_call)
     {
     case DLL_PROCESS_ATTACH:
         AllocConsole();
-        freopen_s(reinterpret_cast<FILE**>(stdout), "CONOUT$", "w", stdout);
-        printf("Hello, from a DLL injected before the process initialized.\nOne step closer.\n\n");
-        printf("\n");
+        freopen_s(reinterpret_cast<FILE * *>(stdout), "CONOUT$", "w", stdout);
+        MessageBox(0, L"Hello, and welcome to the magical world of working hooks.", L"FINALLY.", 0);
+        oCreateFileW = IAT::hook<fn_CreateFileW>("CreateFileW", &hCreateFileW, GetModuleHandle(L"Kernel32.dll"));
 
-        // Somewhere in here we hook CreateFileW or ReadFile to redirect to our own modded file
-        // Currently the program also executes async to this (I think?), need to look into race condition, will fix
+
+    case DLL_PROCESS_DETACH:
+        IAT::hook<fn_CreateFileW>("CreateFileW", &oCreateFileW, GetModuleHandle(L"Kernel32.dll"));
+        break;
+
     case DLL_THREAD_ATTACH:
     case DLL_THREAD_DETACH:
-    case DLL_PROCESS_DETACH:
         break;
     }
     return TRUE;
 }
-

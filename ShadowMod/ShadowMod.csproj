@@ -56,7 +56,7 @@
     <Compile Include="SuspendedProcess.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ThreadInject.cs" />
+    <Compile Include="ThreadRedirect.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

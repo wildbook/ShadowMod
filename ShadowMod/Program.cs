@@ -46,7 +46,7 @@ namespace SimpleDebugger
             Console.WriteLine("Suspended.");
             DebugActiveProcessStop(pInfo.dwProcessId);
 
-            ThreadHijack.Inject(pInfo.hProcess, pInfo.hThread, "thing.dll");
+            ThreadRedirect.Inject(pInfo.hProcess, pInfo.hThread, "thing.dll");
 
             // Resume the thread, redirecting execution to shellcode, then back to original process
             Console.WriteLine("Redirecting execution!");

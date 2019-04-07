@@ -19,7 +19,7 @@ using System.ComponentModel;
 using Thunderbolt.Core;
 using System.Linq;
 
-public class ThreadHijack
+public class ThreadRedirect
 {
     // Import API Functions 
     [DllImport("kernel32.dll")]
@@ -300,13 +300,16 @@ public class ThreadHijack
             
             // Return value from LoadLibraryA ends up here
             0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC,
-
-            // This is the name of the DLL we want to load, right now hardcoded to 'thing.dll'
-            0x74, 0x68, 0x69, 0x6e, 0x67, 0x2e, 0x64, 0x6c, 0x6c, 0x00,
         };
 
+        var dllString = Encoding.ASCII.GetBytes("ShadowMod.Internal.dll");
+
+        var payload = new byte[shellcode.Length + dllString.Length];
+        shellcode.CopyTo(payload, 0);
+        dllString.CopyTo(payload, shellcode.Length);
+
         // Allocate memory for shellcode within process
-        IntPtr allocMemAddress = VirtualAllocEx(hProcess, IntPtr.Zero, (uint)((shellcode.Length + 1) * Marshal.SizeOf(typeof(char))), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+        IntPtr allocMemAddress = VirtualAllocEx(hProcess, IntPtr.Zero, (uint)((payload.Length + 1) * Marshal.SizeOf(typeof(char))), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
         Console.WriteLine("A: (this is where you want to attach the debugger, compile in debug mode to break until [enter] here)");
 
 #if DEBUG
@@ -334,17 +337,17 @@ public class ThreadHijack
 
         var loadLibraryPtrArr = BitConverter.GetBytes(loadLibraryPtr.ToInt64());
 
-        BitConverter.GetBytes(dllStringPtr  .ToInt64()).CopyTo(shellcode, 23);
-        BitConverter.GetBytes(loadLibraryPtr.ToInt64()).CopyTo(shellcode, 33);
-        BitConverter.GetBytes(returnValuePtr.ToInt64()).CopyTo(shellcode, 45);
-        BitConverter.GetBytes(returnToPtr             ).CopyTo(shellcode, 71);
+        BitConverter.GetBytes(dllStringPtr  .ToInt64()).CopyTo(payload, 23);
+        BitConverter.GetBytes(loadLibraryPtr.ToInt64()).CopyTo(payload, 33);
+        BitConverter.GetBytes(returnValuePtr.ToInt64()).CopyTo(payload, 45);
+        BitConverter.GetBytes(returnToPtr             ).CopyTo(payload, 71);
 
         // Write shellcode within process
-        bool resp1 = WriteProcessMemory(hProcess, allocMemAddress, shellcode, (uint)((shellcode.Length + 1) * Marshal.SizeOf(typeof(char))), out UIntPtr bytesWritten);
+        bool resp1 = WriteProcessMemory(hProcess, allocMemAddress, payload, (uint)((payload.Length + 1) * Marshal.SizeOf(typeof(char))), out UIntPtr bytesWritten);
 
         // Read memory to view shellcode
         int bytesRead = 0;
-        byte[] buffer = new byte[shellcode.Length];
+        byte[] buffer = new byte[payload.Length];
         ReadProcessMemory(hProcess, allocMemAddress, buffer, buffer.Length, ref bytesRead);
         Console.WriteLine($"Data in memory: {Encoding.UTF8.GetString(buffer)}");
 
@@ -358,7 +361,7 @@ public class ThreadHijack
         }
         if (GetThreadContext(hThread, ref tContext))
         {
-            Console.WriteLine($"ShellcodeAddress: {allocMemAddress:X}");
+            Console.WriteLine($"Payload Address : {allocMemAddress:X}");
             Console.WriteLine($"NewEip          : {tContext.Rip:X}");
         }
 
