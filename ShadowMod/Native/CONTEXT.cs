@@ -1,6 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace ShadowMod
+namespace ShadowMod.Native
 {
     // x86 context structure (not used in this example)
     [StructLayout(LayoutKind.Sequential)]

@@ -1,6 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace ShadowMod
+namespace ShadowMod.Native
 {
     // x64 context structure
     [StructLayout(LayoutKind.Sequential, Pack = 16)]
@@ -22,7 +22,7 @@ namespace ShadowMod
         public ushort SegFs;
         public ushort SegGs;
         public ushort SegSs;
-        public uint EFlags;
+        public uint   EFlags;
 
         public ulong Dr0;
         public ulong Dr1;

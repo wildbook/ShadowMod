@@ -2,13 +2,10 @@
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace ShadowMod
+namespace ShadowMod.Native
 {
     public static class NativeMethods
     {
-        [DllImport("kernel32.dll", SetLastError = true)]
-        public static extern IntPtr OpenProcess(ProcessAccessRights dwDesiredAccess, bool bInheritHandle, int processId);
-
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool CloseHandle(IntPtr handle);
 
@@ -36,28 +33,8 @@ namespace ShadowMod
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool VirtualFreeEx(IntPtr hProcess, IntPtr lpAddress, int dwSize, MemoryFreeType dwFreeType);
 
-        [DllImport("kernel32.dll", SetLastError = true)]
-        public static extern IntPtr CreateRemoteThread(IntPtr hProcess, IntPtr lpThreadAttributes, int dwStackSize, IntPtr lpStartAddress, IntPtr lpParameter, int dwCreationFlags, out int lpThreadId);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        public static extern WaitResult WaitForSingleObject(IntPtr hHandle, int dwMilliseconds);
-
-        [DllImport("kernel32.dll")]
-        public static extern bool CreateProcess(string lpApplicationName, string lpCommandLine, IntPtr lpProcessAttributes, IntPtr lpThreadAttributes,
-                                 bool bInheritHandles, ProcessCreationFlags dwCreationFlags, IntPtr lpEnvironment,
-                                string lpCurrentDirectory, ref STARTUPINFO lpStartupInfo, out PROCESS_INFORMATION lpProcessInformation);
-
         [DllImport("kernel32.dll")]
         public static extern uint ResumeThread(IntPtr hThread);
-
-        [DllImport("kernel32.dll")]
-        public static extern uint SuspendThread(IntPtr hThread);
-
-        [DllImport("kernel32.dll")]
-        public static extern IntPtr OpenProcess(int dwDesiredAccess, bool bInheritHandle, int dwProcessId);
-
-        [DllImport("kernel32.dll")]
-        public static extern IntPtr OpenThread(ThreadAccess dwDesiredAccess, bool bInheritHandle, uint dwThreadId);
 
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool GetThreadContext(IntPtr hThread, ref CONTEXT64 lpContext);
@@ -65,16 +42,31 @@ namespace ShadowMod
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool SetThreadContext(IntPtr hThread, ref CONTEXT64 lpContext);
 
-        [DllImport("kernel32", CharSet = CharSet.Ansi, ExactSpelling = true, SetLastError = true)]
-        public static extern IntPtr GetProcAddress(IntPtr hModule, string procName);
-
-        [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
-        public static extern IntPtr VirtualAllocEx(IntPtr hProcess, IntPtr lpAddress, uint dwSize, uint flAllocationType, uint flProtect);
-
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool WriteProcessMemory(IntPtr hProcess, IntPtr lpBaseAddress, byte[] lpBuffer, uint nSize, out UIntPtr lpNumberOfBytesWritten);
 
         [DllImport("kernel32.dll")]
         public static extern bool ReadProcessMemory(IntPtr hProcess, IntPtr lpBaseAddress, byte[] lpBuffer, int dwSize, ref int lpNumberOfBytesRead);
+
+        [DllImport("kernel32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool AllocConsole();
+
+        [DllImport("kernel32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool DebugActiveProcessStop([In] int Pid);
+
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        public static extern bool CreateProcess(
+            string lpApplicationName,
+            string lpCommandLine,
+            IntPtr lpProcessAttributes,
+            IntPtr lpThreadAttributes,
+            bool bInheritHandles,
+            uint dwCreationFlags,
+            IntPtr lpEnvironment,
+            string lpCurrentDirectory,
+            [In] ref STARTUPINFO lpStartupInfo,
+            out PROCESS_INFORMATION lpProcessInformation);
     }
 }

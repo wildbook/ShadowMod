@@ -1,7 +1,8 @@
 ﻿using System;
 
-namespace ShadowMod
+namespace ShadowMod.Native
 {
+
     public struct STARTUPINFO
     {
         public uint cb;

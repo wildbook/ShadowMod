@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Thunderbolt.Core
+namespace ShadowMod
 {
     public class Assembler
     {

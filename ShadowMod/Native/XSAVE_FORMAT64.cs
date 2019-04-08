@@ -1,6 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace ShadowMod
+namespace ShadowMod.Native
 {
     // x64 save format
     [StructLayout(LayoutKind.Sequential, Pack = 16)]
@@ -8,17 +8,17 @@ namespace ShadowMod
     {
         public ushort ControlWord;
         public ushort StatusWord;
-        public byte TagWord;
-        public byte Reserved1;
+        public byte   TagWord;
+        public byte   Reserved1;
         public ushort ErrorOpcode;
-        public uint ErrorOffset;
+        public uint   ErrorOffset;
         public ushort ErrorSelector;
         public ushort Reserved2;
-        public uint DataOffset;
+        public uint   DataOffset;
         public ushort DataSelector;
         public ushort Reserved3;
-        public uint MxCsr;
-        public uint MxCsr_Mask;
+        public uint   MxCsr;
+        public uint   MxCsr_Mask;
 
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
         public M128A[] FloatRegisters;

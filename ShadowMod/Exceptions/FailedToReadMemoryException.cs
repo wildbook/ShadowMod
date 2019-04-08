@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Thunderbolt.Core.Exceptions
+namespace ShadowMod.Exceptions
 {
     public class FailedToReadMemoryException : MemoryException
     {

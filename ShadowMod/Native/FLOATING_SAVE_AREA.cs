@@ -1,6 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace ShadowMod
+namespace ShadowMod.Native
 {
     // x86 float save
     [StructLayout(LayoutKind.Sequential)]

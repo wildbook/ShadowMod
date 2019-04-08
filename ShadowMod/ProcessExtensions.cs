@@ -1,12 +1,12 @@
-﻿using ShadowMod;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
+using ShadowMod.Native;
 
-namespace Thunderbolt.Core
+namespace ShadowMod
 {
     public static class ProcessExtensions
     {
@@ -65,14 +65,14 @@ namespace Thunderbolt.Core
                 var path = new StringBuilder(MAX_PATH);
                 NativeMethods.GetModuleFileNameEx(handle, pointers[i], path, MAX_PATH);
 
-                if (path.ToString().IndexOf(name, StringComparison.InvariantCultureIgnoreCase) > -1)
-                {
-                    if (!NativeMethods.GetModuleInformation(handle, pointers[i], out var info, (uint)(size * pointers.Length)))
-                        throw new Exception("Failed to get module information", new Win32Exception());
+                if (path.ToString().IndexOf(name, StringComparison.InvariantCultureIgnoreCase) <= -1)
+                    continue;
 
-                    module = info.lpBaseOfDll;
-                    return true;
-                }
+                if (!NativeMethods.GetModuleInformation(handle, pointers[i], out var info, (uint)(size * pointers.Length)))
+                    throw new Exception("Failed to get module information", new Win32Exception());
+
+                module = info.lpBaseOfDll;
+                return true;
             }
 
             module = IntPtr.Zero;

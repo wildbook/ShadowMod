@@ -1,14 +1,14 @@
-﻿using ShadowMod;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
-using Thunderbolt.Core.Exceptions;
+using ShadowMod.Exceptions;
+using ShadowMod.Native;
 
-namespace Thunderbolt.Core
+namespace ShadowMod
 {
     public class Memory : IDisposable
     {
