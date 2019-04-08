@@ -14,11 +14,11 @@ namespace ShadowMod
             // Get thread context
             var tContext = new CONTEXT64 { ContextFlags = CONTEXT_FLAGS.CONTEXT_FULL };
 
+            // Get current thread context, from here we can get where we're currently executing code (RIP)
             if (NativeMethods.GetThreadContext(hThread, ref tContext))
-            {
                 Console.WriteLine($"CurrentEip   : 0x{tContext.Rip:X}");
-            }
 
+            // Create an array containing our shellcode
             var shellCode = new byte[]
             {
                 // Push all registers to save state
@@ -54,8 +54,10 @@ namespace ShadowMod
                 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC,
             };
 
+            // Get the name of the dll we want to inject
             var dllString = Encoding.ASCII.GetBytes(dllName);
 
+            // Add that dll name to the end of the payload so we can read it from within the payload
             var payload = new byte[shellCode.Length + dllString.Length];
             shellCode.CopyTo(payload, 0);
             dllString.CopyTo(payload, shellCode.Length);
@@ -64,36 +66,34 @@ namespace ShadowMod
             var allocMemAddress = NativeMethods.VirtualAllocEx(hProcess, IntPtr.Zero, ((payload.Length + 1) * Marshal.SizeOf(typeof(char))), AllocationType.MEM_COMMIT | AllocationType.MEM_RESERVE, MemoryProtection.PAGE_EXECUTE_READWRITE);
             var ownProcess = new IntPtr(-1);
 
-            if (!ProcessExtensions.GetModule(ownProcess, "Kernel32", out IntPtr k32))
+            // Try to get the Kernel32 module for our own process
+            // This works as Windows has this dll based at the same location for all processes
+            // See: http://www.nynaeve.net/?p=198
+            if (!ProcessExtensions.GetModule(ownProcess, "Kernel32", out var k32))
                 throw new Win32Exception();
 
-            Console.WriteLine($"Kernel32 : 0x{k32:X}");
-
+            // Find where LoadLibraryA is in our process, it will be at the same location in the target process as well
             var functions = ProcessExtensions.GetExportedFunctions(ownProcess, k32);
             var loadLibraryPtr = functions.First(x => x.Name == "LoadLibraryA").Address;
 
+            // Calculate the other variables we need to insert into our shellcode
             var returnValuePtr = allocMemAddress + 81;
             var dllStringPtr   = allocMemAddress + 89;
             var returnToPtr    = tContext.Rip;
 
-            Console.WriteLine($"DllStringPtr : 0x{dllStringPtr:X}");
-            Console.WriteLine($"LoadLibPtr   : 0x{loadLibraryPtr:X}");
-            Console.WriteLine($"RetValPtr    : 0x{returnValuePtr:X}");
-            Console.WriteLine($"ReturnToPtr  : 0x{returnToPtr:X}");
-
+            // Insert all values we got into the right place in the shellcode, overwriting the existing 0xCC addresses
             BitConverter.GetBytes(dllStringPtr.ToInt64())  .CopyTo(payload, 23);
             BitConverter.GetBytes(loadLibraryPtr.ToInt64()).CopyTo(payload, 33);
             BitConverter.GetBytes(returnValuePtr.ToInt64()).CopyTo(payload, 45);
             BitConverter.GetBytes(returnToPtr)             .CopyTo(payload, 71);
 
             // Write shellcode within process
-            bool resp1 = NativeMethods.WriteProcessMemory(hProcess, allocMemAddress, payload, (uint)((payload.Length + 1) * Marshal.SizeOf(typeof(char))), out UIntPtr bytesWritten);
+            NativeMethods.WriteProcessMemory(hProcess, allocMemAddress, payload, (uint)((payload.Length + 1) * Marshal.SizeOf(typeof(char))), out UIntPtr bytesWritten);
 
             // Read memory to view shellcode
-            int bytesRead = 0;
-            byte[] buffer = new byte[payload.Length];
+            var bytesRead = 0;
+            var buffer = new byte[payload.Length];
             NativeMethods.ReadProcessMemory(hProcess, allocMemAddress, buffer, buffer.Length, ref bytesRead);
-            Console.WriteLine($"Data in memory: {Encoding.UTF8.GetString(buffer)}");
 
             // Set context EIP to location of shellcode
             tContext.Rip = (ulong)allocMemAddress.ToInt64();
@@ -103,13 +103,16 @@ namespace ShadowMod
             {
                 Console.WriteLine("Error setting context");
             }
+
+            // Get thread context again, just to log it and be sure we modified it correctly
+            // For debugging purposes only, not needed
             if (NativeMethods.GetThreadContext(hThread, ref tContext))
             {
                 Console.WriteLine($"Payload Address : {allocMemAddress:X}");
                 Console.WriteLine($"NewEip          : {tContext.Rip:X}");
             }
 
-            //TODO: Read return value
+            //TODO: Read return value from LoadLibrary
             Console.WriteLine("TI: Done.");
             return 0;
         }

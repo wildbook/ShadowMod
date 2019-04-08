@@ -36,11 +36,18 @@ namespace ShadowMod
         {
             var sInfo = new STARTUPINFO();
 
+            // Start process suspended and as debuggee, as IFEO doesn't kick in if a debugger starts a process
+            // This avoids recursively calling ourselves
             if (!NativeMethods.CreateProcess(app, cmdLine, IntPtr.Zero, IntPtr.Zero, false, 2 + 4, IntPtr.Zero, null, ref sInfo, out var pInfo))
                 throw new Win32Exception();
 
+            // Stop debugging it as soon as possible
             NativeMethods.DebugActiveProcessStop(pInfo.dwProcessId);
+
+            // Inject our payload shellcode into the process we just started by hijacking the still suspended thread
             ThreadRedirect.Inject64(pInfo.hProcess, pInfo.hThread, "ShadowMod.Internal.dll");
+
+            // Resume the thread, causing it to execute our payload
             NativeMethods.ResumeThread(pInfo.hThread);
         }
 
